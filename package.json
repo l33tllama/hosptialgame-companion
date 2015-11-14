@@ -1,0 +1,15 @@
+{
+  "name": "hospitalgame-companion",
+  "version": "0.0.0",
+  "description": "todo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Leo Febey",
+  "license": "MIT",
+  "devDependencies": {
+    "browser-sync": "^2.10.0",
+    "gulp": "^3.9.0"
+  }
+}
