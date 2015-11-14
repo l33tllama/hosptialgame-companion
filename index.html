@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <title>Hospital Game Companion App</title>
+  <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="css/main.css">
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+</head>
+<body>
+  <div class="header">
+    <h1><img id="logo" src="/res/img/lemmling-walrus.svg"/>
+    Hospital Manager Boardgame Companion App</h1>
+  </div>
+  <div class="screen" id="menu-screen">
+    <div class="main-content pure-u">
+      <div class="menu-list">
+        <a class="pure-button" id="start-game" href="#">Start Game</a>
+      </div>
+    </div>
+  </div>
+  <div class="screen" state="active" id="game-screen">
+    <div class="main-content pure-u">
+    <div class="menu-list">
+      <ul class="button-list">
+        <li class="button-list-item"><a class="pure-button" id="pause-game" href="#">Pause Game</a></li>
+        <li class="button-list-item"><a class="pure-button" id="end-game" href="#">End Game</a></li>
+      </ul>
+    </div
+    </div>
+  </div>
+
+</body>
+<script type="text/javascript">
+  $(document).ready(function(){
+      $("#start-game").click(function(){
+        $("#menu-screen").attr("state", "inactive");
+      });
+  })
+</script>
+
+</script>
+</html>
