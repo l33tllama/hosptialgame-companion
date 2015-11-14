@@ -10,33 +10,93 @@
 <body>
   <div class="header">
     <h1><img id="logo" src="/res/img/lemmling-walrus.svg"/>
-    Hospital Manager Boardgame Companion App</h1>
+    Knotwurst Hospital Companion App</h1>
   </div>
-  <div class="screen" id="menu-screen">
+  <div class="screen" id="menu-screen" state="active">
+
     <div class="main-content pure-u">
       <div class="menu-list">
-        <a class="pure-button" id="start-game" href="#">Start Game</a>
+        <ul class="button-list">
+          <li class="button-list-item-custom">
+            <span class="button-list-label">Number of Players:</span>
+          </li>
+          <li class="button-list-item-segmented pure-g">
+            <span class="pure-u-1-3 button-1-3-wrapper">
+              <a class="pure-button" id="player-dec">-</a>
+            </span>
+            <span class="pure-u-1-3 button-list-label" id="playerCount">1</span>
+            <span class="pure-u-1-3 button-1-3-wrapper">
+              <a class="pure-button pure-u-1-3" id="player-inc">+</a>
+            </span>
+            </li>
+          <li class="button-list-item"><a class="pure-button" id="start-game" href="#">Start Game</a></li>
+        </ul>
       </div>
     </div>
   </div>
-  <div class="screen" state="active" id="game-screen">
+
+  <div class="screen" id="game-screen">
     <div class="main-content pure-u">
     <div class="menu-list">
+      YEAR: 2015
       <ul class="button-list">
         <li class="button-list-item"><a class="pure-button" id="pause-game" href="#">Pause Game</a></li>
         <li class="button-list-item"><a class="pure-button" id="end-game" href="#">End Game</a></li>
       </ul>
-    </div
+    </div>
     </div>
   </div>
 
 </body>
 <script type="text/javascript">
   $(document).ready(function(){
+    var gameStates = ['main-menu', 'starting', 'start-round', 'decision',
+      'resolution', 'paused', 'paused-help'];
+    var currentGameState = 'main-menu';
+    var totalPlayers = 1;
+    var MAX_PLAYERS = 4;
+
       $("#start-game").click(function(){
-        $("#menu-screen").attr("state", "inactive");
+        if(currentGameState == "main-menu"){
+          $("#menu-screen").attr("state", "inactive");
+          $("#game-screen").attr("state", "active");
+          currentGameState = 'starting';
+          startRound();
+        }
       });
-  })
+      $("#player-dec").click(function(){
+        if(totalPlayers > 1){
+          totalPlayers--;
+          updatePlayerCount();
+        };
+      })
+      $("#player-inc").click(function(){
+        if(totalPlayers < MAX_PLAYERS){
+          totalPlayers++;
+          updatePlayerCount();
+        };
+      })
+      function updatePlayerCount(){
+        $("#playerCount").html(totalPlayers);
+      }
+      $("#end-game").click(function(){
+        if(currentGameState == 'running'
+          || currentGameState == "main-menu"
+          || currentGameState == "starting"){
+            $("#game-screen").attr("state", "inactive");
+            $("#menu-screen").attr("state", "active");
+            currentGameState = "main-menu";
+        }
+      });
+
+      function startRound(){
+        console.log("Round started");
+      }
+  });
+  // YEAR -
+  // start a round
+  // decision phase - timed
+  // resolution phase - checklist to make sure everything went right
 </script>
 
 </script>
