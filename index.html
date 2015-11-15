@@ -5,15 +5,22 @@
   <meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" type="text/css" href="css/main.css">
+  <link rel="stylesheet" href="bower_components/flipclock/src/flipclock/css/flipclock.css"/>
   <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/flipclock/compiled/flipclock.min.js"></script>
+  <script src="bower_components/howler.js/howler.min.js"></script>
+  <script src="bower_components/jquery-Mustache/jquery.mustache.js"></script>
+  <script src="bower_components/mustache.js/mustache.min.js"></script>
+  <script src="bower_components/timer.js/dist/timer.min.js"></script>
 </head>
 <body>
   <div class="header">
     <h1><img id="logo" src="/res/img/lemmling-walrus.svg"/>
     Knotwurst Hospital Companion App</h1>
   </div>
-  <div class="screen" id="menu-screen" state="active">
 
+  <!-- MENU SCREEN -->
+  <div class="screen" id="menu-screen" state="active">
     <div class="main-content pure-u">
       <div class="menu-list">
         <ul class="button-list">
@@ -35,35 +42,126 @@
     </div>
   </div>
 
-  <div class="screen" id="game-screen">
-    <div class="main-content pure-u">
-    <div class="menu-list">
-      YEAR: 2015
-      <ul class="button-list">
-        <li class="button-list-item"><a class="pure-button" id="pause-game" href="#">Pause Game</a></li>
-        <li class="button-list-item"><a class="pure-button" id="end-game" href="#">End Game</a></li>
-      </ul>
-    </div>
+  <!-- WARMUP SCREEN -->
+  <div class="screen" id="warmup-screen" state="inactive">
+    <div class="main-content">
+      <div class="menu-list">
+        <div class="warmup-container pure-u">
+          <h2 class="menu-heading">Warmup..</h2>
+          <span class="pure-u-1-3"></span>
+          <div class="flipclock pure-u-1-3"  id="warmup-flipclock"></div>
+          <span class="pure-u-1-3"></span>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- PLANNING PHASE SCREEN -->
+  <div class="screen" id="planning-screen" state="inacive">
+    <div class="main-content pure-u">
+      <div class="menu-list">
+        <h2 class="menu-heading">Planning Phase</h2>
+        <div class="clock-container pure-u">
+          <span class="pure-u-1-3"></span>
+          <div class="flipclock pure-u-1-3"  id="planning-flipclock"></div>
+          <span class="pure-u-1-3"></span>
+        </div>
+        <ul class="button-list">
+          <div class="event-list-container-container pure-g">
+            <span class="pure-u-1-12"></span>
+            <div class="pure-u-20-24 button-list-item-event-container" id="events-list">
+            </div>
+            <span class="pure-u-1-12"></span>
+          </div>
+          <ul class="button-list">
+            <li class="button-list-item"><a class="pure-button" id="toggle-music" href="#">Toggle Music</a></li>
+            <li class="button-list-item"><a class="pure-button" id="pause-game" href="#">Pause Game</a></li>
+            <li class="button-list-item"><a class="pure-button" id="end-game" href="#">End Game</a></li>
+          </ul>
+        </ul>
+      </div>
+    </div>
+  </div>
 </body>
-<script type="text/javascript">
+
+<script>
   $(document).ready(function(){
-    var gameStates = ['main-menu', 'starting', 'start-round', 'decision',
+    var gameStates = ['main-menu', 'warmup', 'planning',
       'resolution', 'paused', 'paused-help'];
     var currentGameState = 'main-menu';
     var totalPlayers = 1;
     var MAX_PLAYERS = 4;
 
+    var PLANNING_TIME = 3 * 60;
+    var BEEPING_TIME = 30;
+    var WARMUP_TIME = 1;
+
+    var warmup_flipclock;
+    var planning_flipclock;
+    var planningTimerA;
+    var planningTimerB;
+    var planningTimerAStart = false;
+    var planningTimerBStart = false;
+
+    var music = new Howl({
+      urls : ['res/snd/Mark - board game (looped).ogg'],
+      autoplay : false,
+      loop : true,
+      volume : 0.5
+    });
+
+    var beep = new Howl({
+      urls : ['res/snd/Beep-Shorter.ogg'],
+      autoplay : false,
+      loop : false,
+      volume : 0.5
+    });
+
+    var long_beep = new Howl({
+      urls : ['res/snd/Beep-Long.ogg'],
+      autoplay : false,
+      loop : false,
+      volume : 0.5
+    });
+
+    var music_playing = false;
+
+    var player_events = {
+      chief_of_planning : { "draw_3_facilities" : {
+        desc : "Draw 3 facilities tiles, 1 at a time (yes, you can look at them!), from\
+         the face-down facilities pile. These are now available to purchase \
+         under tender."
+      },
+      "pay_tenders" : {
+        desc : "Assign money to pay for tenders (at point-in-time - prices reduce as \
+          time progresses, see app for actual price and to ensure it’s still \
+          available)",
+      }
+    },
+      chief_administrator : [],
+      chief_of_medical_staff : [],
+      chief_of_hr : []
+    };
+
+    var current_events = {
+      chief_of_planning : [],
+      chief_administrator : [],
+      chief_of_medical_staff : [],
+      chief_of_hr : []
+    };
+
+    // START GAME BUTTONS/WIDGETS
       $("#start-game").click(function(){
         if(currentGameState == "main-menu"){
           $("#menu-screen").attr("state", "inactive");
-          $("#game-screen").attr("state", "active");
-          currentGameState = 'starting';
-          startRound();
+          $("#warmup-screen").attr("state", "active");
+          warmup();
+        } else {
+          console.log("Wrong game state! " + currentGameState +
+          " Supposed to be main-menu");
         }
       });
+
       $("#player-dec").click(function(){
         if(totalPlayers > 1){
           totalPlayers--;
@@ -76,28 +174,120 @@
           updatePlayerCount();
         };
       })
+
+      // TODO: Assign roles
       function updatePlayerCount(){
         $("#playerCount").html(totalPlayers);
       }
+
+      // GAME ROUND BUTTONS
       $("#end-game").click(function(){
-        if(currentGameState == 'running'
-          || currentGameState == "main-menu"
-          || currentGameState == "starting"){
+        if(currentGameState != "main-menu"){
             $("#game-screen").attr("state", "inactive");
             $("#menu-screen").attr("state", "active");
             currentGameState = "main-menu";
+            if (music_playing){
+              music.stop();
+              music_playing = false;
+            }
+            if(planningTimerAStart){
+              planningTimerA.stop();
+              planningTimerAStart = false;
+            }
+            if(planningTimerBStart){
+              planningTimerB.stop()
+              planningTimerBStart = false;
+            }
+        } else {
+          console.log("Wrong game state! " + currentGameState +
+          " Supposed to be not main menu");
         }
       });
 
-      function startRound(){
+      $("#toggle-music").click(function(){
+        if(music_playing){
+          music.stop();
+          music_playing = false;
+          console.log("Music paused.");
+        } else {
+          music.play();
+          music_playing = true;
+          console.log("Music un-paused.");
+        }
+      });
+
+      function warmup(){
+        currentGameState = "warmup";
+        warmup_flipclock = $("#warmup-flipclock").FlipClock(WARMUP_TIME, {
+          clockFace : 'MinuteCounter',
+          autostart : false,
+          countdown: true,
+          callbacks : {
+            stop : startNewRound
+        }});
+
+        warmup_flipclock.start();
+
         console.log("Round started");
+      }
+
+      function startNewRound(){
+        if(currentGameState == "warmup"){
+          currentGameState = "planning";
+          console.log("Planning phase beginning!");
+          $("#warmup-screen").attr("state", "inactive");
+          $("#planning-screen").attr("state", "active");
+          music.play();
+          music_playing = true;
+
+          planning_flipclock = $("#planning-flipclock").FlipClock(PLANNING_TIME,
+         {
+            clockFace : "MinuteCounter",
+            autostart : false,
+            countdown : true,
+            callbacks : {
+              stop : roundTimeout
+            }
+          });
+
+          planningTimerA = new Timer({
+            onend : function(){
+              planningTimerB = new Timer({
+                ontick : function(){
+                  beep.play();
+                },
+                onend : function(){
+                  long_beep.play();
+                }
+              });
+              planningTimerBStart = true;
+              planningTimerB.start(BEEPING_TIME + 1);
+            }
+          });
+
+          planningTimerA.start(PLANNING_TIME - BEEPING_TIME);
+          planningTimerAStart = true;
+
+
+          var viewData = { event_data: 'game event', event_id : 1 };
+          $.Mustache.load('./html/event_block.html')
+              .done(function () {
+                  $('#events-list').mustache('event-block', viewData);
+          });
+
+        } else {
+          console.log("Wrong game state! " + currentGameState +
+          " Supposed to be warmup");
+        }
+      }
+
+      function roundTimeout(){
+
       }
   });
   // YEAR -
   // start a round
   // decision phase - timed
   // resolution phase - checklist to make sure everything went right
-</script>
-
-</script>
+  </script>
 </html>

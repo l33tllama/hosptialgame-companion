@@ -16,30 +16,6 @@ html{
       top: 3px;
       position: relative;
     }
-
-    .main-content, .header{
-      //margin: 20px;
-    }
-    .main-content{
-      width: 100%;
-      .button-wrapper{
-        //margin: 0 auto;
-        text-align: center;
-      }
-    }
-    .menu-list, .header{
-      padding: 10px;
-
-    }
-    .menu-list{
-      width: 100%;
-      text-align: center;
-      margin: 0;
-      top: 0;
-      background-color: #7f7f7f;
-      height: 100vh;
-    }
-
     .screen{
       display: none;
     }
@@ -49,15 +25,34 @@ html{
     .screen[state=active]{
       display: block;
     }
+    .main-content, .header{
+      //margin: 20px;
+    }
+    .menu-list, .header{
+      padding: 10px;
+    }
+    .main-content{
+      width: 100%;
 
+      .menu-list{
+        width: 100%;
+        text-align: center;
+        margin: 0;
+        top: 0;
+        background-color: #7f7f7f;
+        height: 100vh;
+        h2 {
+          color: #e6e6e6;
+        }
+      }
+    }
     .button-list{
       list-style: none;
       //margin: 0 auto;
       padding-left: 0;
-
+      text-align: center;
       li{
         //margin: 0;
-
       }
       .button-1-3-wrapper .pure-button{
         width: 98%;
@@ -69,7 +64,6 @@ html{
         border-radius: 2px;
         background-color: #e6e6e6;
         max-width: 90%;
-
       }
       .button-list-label{
         background-color: #e6e6e6;
@@ -94,6 +88,16 @@ html{
         margin-left: 5%;
         margin-right: 5%;
       }
+      .button-list-item-event-container{
+        //text-align: center;
+        //display: inline;
+      }
+      .button-list-item-event{
+        border: 2px solid #e6e6e6;
+        border-radius: 2px;
+        //width: 90%;
+        padding: 5px;
+      }
       #start-game{
         background: rgb(28, 184, 65);
         color: #fff;
@@ -103,7 +107,14 @@ html{
         color: #fff;
       }
     }
+    .warmup-container{
+      text-align: center;
 
+      width:  auto;
+      .flipclock{
+        text-align: center;
+      }
+    }
     .header{
       background-color: #e6e6e6;
       margin: 0;
@@ -122,4 +133,12 @@ html{
     display: inline-block;
     /* Or set the width explicitly: */
     /* width: 10em; */
-}
+}/*
+.flip-clock-divider.days,
+.flip-clock-divider.hourss,
+.flipclock ul:nth-child(1),
+.flipclock ul:nth-child(2),
+.flipclock ul:nth-child(3)
+{
+    display: none;
+}*/
