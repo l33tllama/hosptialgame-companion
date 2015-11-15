@@ -349,8 +349,8 @@ Array.prototype.shuffle = function() {
     var totalPlayers = 1;
     var MAX_PLAYERS = 4;
 
-    var PLANNING_TIME = 5;
-    var BEEPING_TIME = 2;
+    var PLANNING_TIME = 30;
+    var BEEPING_TIME = 10;
     var LONG_BEEP_TIME = 10; // may change if audio file changes
     var WARMUP_TIME = 1;
 
@@ -373,6 +373,13 @@ Array.prototype.shuffle = function() {
 
     var beep = new Howl({
       urls : ['res/snd/Beep-Shorter.ogg'],
+      autoplay : false,
+      loop : false,
+      volume : 0.5
+    });
+
+    var event_beep = new Howl({
+      urls : ['res/snd/Notification1.ogg'],
       autoplay : false,
       loop : false,
       volume : 0.5
@@ -693,6 +700,7 @@ Array.prototype.shuffle = function() {
                 current_ev_i++;
                 $.Mustache.load('./html/event_block.html', viewData)
                   .done(function(){
+                    event_beep.play();
                     $("#events-list").mustache('event-block', viewData,
                     { method: 'prepend' });
                   });
