@@ -82,19 +82,67 @@
       </div>
     </div>
   </div>
+  <div class="screen" id="resolution-screen-1" state="inacive">
+    <div class="main-content pure-u" id="planning-background">
+      <div class="menu-list">
+        <h2 class="menu-heading">Resolution Phase</h2>
+        <h2 class="menu-heading">Question 1</h2>
+        <ul class="button-list">
+          <li class="button-list-item"><a class="pure-button" id="q1-next-btn" href="#">Next</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="screen" id="resolution-screen-2" state="inacive">
+    <div class="main-content pure-u" id="planning-background">
+      <div class="menu-list">
+        <h2 class="menu-heading">Resolution Phase</h2>
+        <h2 class="menu-heading">Question 2</h2>
+        <ul class="button-list">
+          <li class="button-list-item"><a class="pure-button" id="q2-next-btn" href="#">Next</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="screen" id="resolution-screen-3" state="inacive">
+    <div class="main-content pure-u" id="planning-background">
+      <div class="menu-list">
+        <h2 class="menu-heading">Resolution Phase</h2>
+        <h2 class="menu-heading">Question 3</h2>
+        <ul class="button-list">
+          <li class="button-list-item"><a class="pure-button" id="q3-next-btn" href="#">Next</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </body>
 
 <script>
+Array.prototype.shuffle = function() {
+    var input = this;
+
+    for (var i = input.length-1; i >=0; i--) {
+
+        var randomIndex = Math.floor(Math.random()*(i+1));
+        var itemAtIndex = input[randomIndex];
+
+        input[randomIndex] = input[i];
+        input[i] = itemAtIndex;
+    }
+    return input;
+};
   $(document).ready(function(){
     var gameStates = ['main-menu', 'warmup', 'planning',
       'resolution', 'paused', 'paused-help'];
+      var RESOLUTION_QUESTIONS = 3;
     var game_paused = false;
+    var round_ended = false;
     var currentGameState = 'main-menu';
     var totalPlayers = 1;
     var MAX_PLAYERS = 4;
 
-    var PLANNING_TIME = 13;
-    var BEEPING_TIME = 12;
+    var PLANNING_TIME = 5;
+    var BEEPING_TIME = 2;
     var LONG_BEEP_TIME = 10; // may change if audio file changes
     var WARMUP_TIME = 1;
 
@@ -105,6 +153,8 @@
     var planningTimerAStart = false;
     var planningTimerBStart = false;
     var long_beep_playing = false;
+    var waitingListCount = 0;
+    var game_events;
 
     var music = new Howl({
       urls : ['res/snd/Mark - board game (looped).ogg'],
@@ -132,29 +182,37 @@
 
     var music_playing = false;
 
-    var player_events = {
-      chief_of_planning : { "draw_3_facilities" : {
-        desc : "Draw 3 facilities tiles, 1 at a time (yes, you can look at them!), from\
-         the face-down facilities pile. These are now available to purchase \
-         under tender."
-      },
-      "pay_tenders" : {
-        desc : "Assign money to pay for tenders (at point-in-time - prices reduce as \
-          time progresses, see app for actual price and to ensure it’s still \
-          available)",
-      }
-    },
-      chief_administrator : [],
-      chief_of_medical_staff : [],
-      chief_of_hr : []
-    };
 
-    var current_events = {
-      chief_of_planning : [],
-      chief_administrator : [],
-      chief_of_medical_staff : [],
-      chief_of_hr : []
-    };
+    var chief_of_planning_events =  [
+      {
+          "desc": "Assign money to R&D projects.",
+          "freq_min": 1,
+          "freq_max": 3
+      },
+      {
+          "desc": "Assign money to pay tenders - reduce cost by one step.",
+          "freq_min": 3,
+          "freq_max": 5
+      }
+    ];
+
+    // base fig + round + prev round waiting list
+    var chief_administrator_events = [
+        {
+            "desc": "Draw patient cards.",
+            "freq_min": 3,
+            "freq_max": 3
+        }
+    ];
+    var chief_of_hr_events = [
+        {
+            "desc": 'Deal 3 doctor cards.',
+            "freq_min": 2,
+            "freq_max": 2
+        }
+    ];
+
+    var round_events = [];
 
     // START GAME BUTTONS/WIDGETS
       $("#start-game").click(function(){
@@ -304,8 +362,58 @@
 
         console.log("Round started");
       }
+      function generateEvents(){
+
+          // TODO: double check actual random number checks - is it hitting
+          // upper bound?
+
+          var ch_o_hr_evs = [];
+          console.log("Chief of HR events");
+          for(var i = 0; i < chief_of_hr_events.length; i++){
+            var ev = chief_of_hr_events[i];
+            var count = ev.freq_min + Math.floor(Math.random() *
+              (ev.freq_max - ev.freq_min));
+            console.log("Adding " + ev.desc + " " + count + " times");
+            for(var j = 0; j < count; j++){
+              ch_o_hr_evs.push(ev.desc);
+            }
+
+          }
+          console.log("Chief of Admin events" + chief_administrator_events.length);
+          var ch_o_admin_evs = [];
+          for(var i=0; i < chief_administrator_events.length; i++){
+            var ev = chief_administrator_events[i];
+            var count = ev.freq_min + Math.floor(Math.random() *
+              (ev.freq_max - ev.freq_min));
+            console.log("Adding " + ev.desc + " " + count + " times." );
+            for(var j= 0; j < count; j++){
+              ch_o_admin_evs.push(ev.desc);
+            }
+          }
+
+          console.log("Chief of planning events" + chief_of_planning_events.length);
+          var ch_o_pl_evs = [];
+          for(var i = 0; i < chief_of_planning_events.length; i++){
+            console.log("cop i" + i);
+            var ev = chief_of_planning_events[i];
+            var count = ev.freq_min + Math.floor(Math.random() *
+              (ev.freq_max - ev.freq_min));
+            console.log("Adding " + ev.desc + " " + count + " times." );
+            for(var j = 0; j < count; j++){
+              ch_o_pl_evs.push(ev.desc);
+            }
+          }
+
+          var all_events = ch_o_hr_evs.concat(ch_o_admin_evs.concat(
+            ch_o_pl_evs));
+          return all_events.shuffle();
+      }
 
       function startNewRound(){
+        if(round_ended){
+          $("#pause-game").show();
+          round_ended = false;
+        }
         if(currentGameState == "warmup"){
           currentGameState = "planning";
           console.log("Planning phase beginning!");
@@ -314,31 +422,39 @@
           music.play();
           music_playing = true;
 
-          planning_flipclock = $("#planning-flipclock").FlipClock(PLANNING_TIME,
+          planning_flipclock = $("#planning-flipclock").FlipClock(
+            PLANNING_TIME,
          {
             clockFace : "MinuteCounter",
             autostart : false,
             countdown : true,
             callbacks : {
-              stop : roundTimeout
+              stop : resolutionPhase
             }
           });
 
+          // Beep timer
           planningTimerA = new Timer({
             onend : function(){
               planningTimerB = new Timer({
                 ontick : function(){
                   beep.play();
-                  $("#planning-background").css("background-color", "#f00");
+                  $("#planning-background").css(
+                    "background-color", "#f00");
                   setTimeout(function(){
-                    $("#planning-background").css("background-color", "#7f7f7f");
+                    $("#planning-background").css(
+                      "background-color", "#7f7f7f");
                   }, 1);
                 },
                 onend : function(){
+                  // pre-resolution-phase tasks
                   music.stop();
                   music_playing = false;
                   long_beep.play();
                   long_beep_playing = true;
+                  round_ended = true;
+                  $("#pause-game").hide();
+                  $('#events-list').empty();
                 }
               });
               planningTimerBStart = true;
@@ -349,26 +465,68 @@
           planningTimerA.start(PLANNING_TIME - BEEPING_TIME);
           planningTimerAStart = true;
 
+          // Generate events!!
+          game_events = generateEvents();
+          prev_ev_id = null;
+          var current_ev_i = 0;
 
-          var viewData = { event_data: 'game event', event_id : 1 };
-          $.Mustache.load('./html/event_block.html')
-              .done(function () {
-                  $('#events-list').mustache('event-block', viewData);
-          });
+          // TODO: fancy effects
+          var event_dt = PLANNING_TIME / (game_events.length + 1);
+          console.log("Event dt: " + event_dt);
+          for(var i = 0; i < game_events.length; i++){
+            console.log("Planning event: " + game_events[i]);
+            //var ev = game_events[i];
+            var tmp_ev_timer = new Timer({
+              onend : function(){
 
+                var ev = game_events.pop();
+                console.log("New event! " + ev);
+                var viewData = {event_data : ev, event_id : current_ev_i};
+                current_ev_i++;
+                $.Mustache.load('./html/event_block.html', viewData)
+                  .done(function(){
+                    $("#events-list").mustache('event-block', viewData,
+                    { method: 'prepend' });
+                  });
+              }
+            });
+            tmp_ev_timer.start(Math.floor(i * event_dt));
+          }
         } else {
           console.log("Wrong game state! " + currentGameState +
           " Supposed to be warmup");
         }
       }
 
-      function roundTimeout(){
-
+      function resolutionPhase(){
+        currentGameState = "resolution";
+        $("#planning-screen").attr("state", "inactive");
+        $("#resolution-screen-1").attr("state", "active");
       }
+      $("#q1-next-btn").click(function(){
+        $("#resolution-screen-1").attr("state", "inactive");
+        $("#resolution-screen-2").attr("state", "active");
+      })
+      $("#q2-next-btn").click(function(){
+        $("#resolution-screen-2").attr("state", "inactive");
+        $("#resolution-screen-3").attr("state", "active");
+      })
+      $("#q3-next-btn").click(function(){
+        $("#resolution-screen-3").attr("state", "inactive");
+        $("#warmup-screen").attr("state", "active");
+        warmup();
+      })
+      /*for(var i = 0; i < RESOLUTION_QUESTIONS; i++){
+        $("#q"+(i+1)+"-next-btn").click(function(){
+          $("#resolution-screen-"+(i+1)).attr("state", "inactive");
+          if(i+1 < RESOLUTION_QUESTIONS){
+            $("#resolution-screen-"+(i+2)).attr("state", "active");
+          }
+          else {
+              // get answers to questions
+          }
+        })
+      }*/
   });
-  // YEAR -
-  // start a round
-  // decision phase - timed
-  // resolution phase - checklist to make sure everything went right
   </script>
 </html>
