@@ -58,7 +58,7 @@
 
   <!-- PLANNING PHASE SCREEN -->
   <div class="screen" id="planning-screen" state="inacive">
-    <div class="main-content pure-u">
+    <div class="main-content pure-u" id="planning-background">
       <div class="menu-list">
         <h2 class="menu-heading">Planning Phase</h2>
         <div class="clock-container pure-u">
@@ -88,12 +88,14 @@
   $(document).ready(function(){
     var gameStates = ['main-menu', 'warmup', 'planning',
       'resolution', 'paused', 'paused-help'];
+    var game_paused = false;
     var currentGameState = 'main-menu';
     var totalPlayers = 1;
     var MAX_PLAYERS = 4;
 
-    var PLANNING_TIME = 3 * 60;
-    var BEEPING_TIME = 30;
+    var PLANNING_TIME = 13;
+    var BEEPING_TIME = 12;
+    var LONG_BEEP_TIME = 10; // may change if audio file changes
     var WARMUP_TIME = 1;
 
     var warmup_flipclock;
@@ -102,6 +104,7 @@
     var planningTimerB;
     var planningTimerAStart = false;
     var planningTimerBStart = false;
+    var long_beep_playing = false;
 
     var music = new Howl({
       urls : ['res/snd/Mark - board game (looped).ogg'],
@@ -121,7 +124,10 @@
       urls : ['res/snd/Beep-Long.ogg'],
       autoplay : false,
       loop : false,
-      volume : 0.5
+      volume : 0.5,
+      onend : function(){
+        console.log("Round over...");
+      }
     });
 
     var music_playing = false;
@@ -183,13 +189,16 @@
       // GAME ROUND BUTTONS
       $("#end-game").click(function(){
         if(currentGameState != "main-menu"){
-            $("#game-screen").attr("state", "inactive");
-            $("#menu-screen").attr("state", "active");
-            currentGameState = "main-menu";
+
+            if(game_paused){
+              resumeGame();
+            }
+            // stop music
             if (music_playing){
               music.stop();
               music_playing = false;
             }
+            // stop beep timers
             if(planningTimerAStart){
               planningTimerA.stop();
               planningTimerAStart = false;
@@ -198,6 +207,19 @@
               planningTimerB.stop()
               planningTimerBStart = false;
             }
+            if (long_beep_playing){
+              long_beep.stop();
+              long_beep_playing = false;
+            }
+
+            // stop flipclock
+            planning_flipclock.stop()
+
+            $("#game-screen").attr("state", "inactive");
+            $("#menu-screen").attr("state", "active");
+            currentGameState = "main-menu";
+
+
         } else {
           console.log("Wrong game state! " + currentGameState +
           " Supposed to be not main menu");
@@ -215,6 +237,58 @@
           console.log("Music un-paused.");
         }
       });
+      function pauseGame(){
+        // pause beep timers
+        if(planningTimerAStart){
+          planningTimerA.pause();
+        }
+        if(planningTimerBStart){
+          planningTimerB.pause();
+        }
+
+        // pause main flipclock
+        planning_flipclock.stop()
+
+        // pause music if playing
+        if(music_playing){
+          music.pause();
+        }
+
+        // change paused label
+        $("#pause-game").text("Resume Game");
+
+        game_paused = true;
+      }
+
+      function resumeGame(){
+        // resume beep timers
+        if(planningTimerAStart){
+          planningTimerA.start();
+        }
+        if(planningTimerBStart){
+          planningTimerB.start();
+        }
+
+        // resume main clock
+        planning_flipclock.start();
+
+        // resume music if it was playing
+        if(music_playing){
+          music.play()
+        }
+        // change paused label
+        $("#pause-game").text("Pause Game");
+        game_paused = false;
+      }
+      $("#pause-game").click(function(){
+        switch (game_paused) {
+          case false:
+            pauseGame();
+            break;
+          default:
+            resumeGame();
+        }
+      })
 
       function warmup(){
         currentGameState = "warmup";
@@ -255,9 +329,16 @@
               planningTimerB = new Timer({
                 ontick : function(){
                   beep.play();
+                  $("#planning-background").css("background-color", "#f00");
+                  setTimeout(function(){
+                    $("#planning-background").css("background-color", "#7f7f7f");
+                  }, 1);
                 },
                 onend : function(){
+                  music.stop();
+                  music_playing = false;
                   long_beep.play();
+                  long_beep_playing = true;
                 }
               });
               planningTimerBStart = true;
