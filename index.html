@@ -713,7 +713,7 @@ Array.prototype.shuffle = function() {
           " Supposed to be warmup");
         }
       }
-
+      // TODO: replace with looped generator
       function resolutionPhase(){
         currentGameState = "resolution";
         $("#planning-screen").attr("state", "inactive");
